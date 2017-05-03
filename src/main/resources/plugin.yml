@@ -1,0 +1,174 @@
+name: SplatNukkit
+main: SplatoonMCPE.Main
+version: 2.4.1.3
+api: [1.0.0, 2.0.0, 3.0.0]
+load: POSTWORLD
+author: OpenSplaturn2
+authors: [OpenSplaturn2]
+description: A Splatoon-ish plugin for Nukkit
+website: https://github.com/OpenSplaturn2
+commands:
+ test:
+  aliases: [test2, test3, test4, xyz, dev]
+  description: "テストコマンド"
+  usage: "/test"
+  permission: splatt.command.dev
+ huee:
+  aliases: [hayaru, hayaranai,trasta]
+  description: "ふええっていいます"
+  usage: "/huee"
+  permission: splatt.command.guest
+ tpr:
+  description: "リスポーン地点/ゲーム開始地点に戻ります"
+  usage: "/tpr [プレイヤー]"
+  permission: splatt.command.guest
+ tm:
+  description: "チームメンバーと装備しているブキを表示します"
+  usage: "/tm"
+  permission: splatt.command.guest
+ weap:
+  description: "ブキを配布します"
+  usage: "/weap"
+  permission: splatt.command.guest
+ book:
+  description: "本を配布します"
+  usage: "/book"
+  permission: splatt.command.guest
+ join:
+  description: "グループに参加します"
+  usage: "/join [グループ]"
+  permission: splatt.command.guest
+ quit:
+  description: "グループから抜けます"
+  usage: "/quit"
+  permission: splatt.command.guest
+ team:
+  description: "グループ状況を確認します"
+  usage: "/team"
+  permission: splatt.command.guest
+ view:
+  description: "試合を観戦、または観戦を終了します"
+  usage: "/view"
+  permission: splatt.command.guest
+ tc:
+  description: "同じグループのメンバー同士で会話をします"
+  usage: "/tc <メッセージ>"
+  permission: splatt.command.guest
+ cal:
+  description: "ブキのダメージを計算します"
+  usage: "/cal <攻撃強化ガジェットの数> <相手の防御強化ガジェットの数>"
+  permission: splatt.command.guest
+ st:
+  description: "アカウントステータスを確認します"
+  usage: "/st"
+  permission: splatt.command.guest
+ tr:
+  description: "試し塗りを開始/終了します"
+  usage: "/tr"
+  permission: splatt.command.guest
+ mute:
+  description: "通常のチャットを非表示にします"
+  usage: "/mute <on|off>"
+  permission: splatt.command.guest
+ cam:
+  description: "カメラの視点移動用コマンド"
+  usage: "/cam [Field number] <Position number>"
+  permission: splatt.command.mov
+ recon:
+  description: "指定したフィールドをさんぽします"
+  usage: "/recon <Field number>"
+  permission: splatt.command.guest
+ setmode:
+  description: "ログイン制限を変更します"
+  usage: "/setmode"
+  permission: splatt.command.admin
+ gready:
+  description: "ゲームを強制的に開始します"
+  usage: "/gready"
+  permission: splatt.command.behavior
+ gend:
+  description: "ゲームを強制的に終了します"
+  usage: "/gend"
+  permission: splatt.command.behavior
+ gstop:
+  description: "ゲームを停止、再開します(使わないように)"
+  usage: "/gstop"
+  permission: splatt.command.behavior
+ gskip:
+  description: "ゲームを強制的に進めます"
+  usage: "/gskip"
+  permission: splatt.command.behavior
+ tprall:
+  description: "全員をリスポーン地点にテレポートします"
+  usage: "/tprall"
+  permission: splatt.command.admin
+ givew:
+  description: "武器をあげます"
+  usage: "/givew <プレイヤー> <ブキナンバー>"
+  permission: splatt.command.admin+
+ dsave:
+  description: "データセーブコマンド"
+  usage: "/dsave"
+  permission: splatt.command.admin
+ t:
+  description: "チームを拡大/縮小します"
+  usage: "/t <add|remove>"
+  permission: splatt.command.guest
+ random:
+  description: "Tipsを表示、またはTipsの表示を開始/停止します"
+  usage: "/random [番号 または start | stop]"
+  permission: splatt.command.admin
+ s:
+  description: "サーバー関係のデータとか"
+  usage: "/s <サブコマンド>"
+  permission: splatt.command.admin
+ tpalls:
+  description: "指定サーバーにテレポートします"
+  usage: "/tpalls [ServerNumber]"
+  permission: splatt.command.admin
+ setf:
+  description: "次の試合のフィールドを指定"
+  usage: "/setf <FieldNumber>"
+  permission: splatt.command.admin+
+ pban:
+  description: "ぱにい ban"
+  usage: "/pban <プレイヤー> <理由>"
+  permission: splatt.command.admin
+ pwarn:
+  description: "ぱにい warn"
+  usage: "/pwarn <プレイヤー> <理由>"
+  permission: splatt.command.admin
+ oc:
+  description: "OP同士で会話をします"
+  usage: "/oc <message ...>"
+  permission: splatt.command.admin
+ del:
+  description: "村人などのエンティティを削除します"
+  usage: "/del"
+  permission: splatt.command.admin
+
+permissions:
+ splaturn:
+  default: op
+  children:
+   splatt.command:
+    default: op
+    children:
+     splatt.command.guest:
+      default: true
+      description: "guest"
+     splatt.command.behavior:
+      default: op
+      description: "OP候補"
+     splatt.command.admin:
+      default: op
+      description: "operator"
+     splatt.command.admin+:
+      default: op
+      description: "opc"
+     splatt.command.dev:
+      default: op
+      description: "developer"
+     splatt.command.mov:
+      default: op
+      description: "movie recorder"
