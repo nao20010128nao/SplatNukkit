@@ -11,6 +11,7 @@ import cn.nukkit.scheduler.Task
 
 import static java.lang.Math.*
 import static SplatoonMCPE.PhpUtils.*
+import static java.util.Collections.*
 
 /**
  * Created by nao on 2017/05/03.
@@ -646,9 +647,88 @@ class Main extends PluginBase {
                                 s.sendMessage(this.lang.translateString("command.notPermission"))
                                 return true
                             }
-                            // Main.php:1726
+                            def teamEvent=this.team.teamEvent
+                            def teamName=[
+                                    3 : "§eyellow",
+                                    4 : "§agreen",
+                                    5 : "§baqua",
+                                    6 : "§9blue",
+                                    7 : "§dpink",
+                                    8 : "§5purple"
+                            ]
+                            out = "Team event\n§a> add§f"
+                            if(teamEvent.add){
+                                def addData=(Map)teamEvent.add
+                                addData.keySet()
+                                        .sort()
+                                        .stream()
+                                        .map{[it,addData[it]]}
+                                        .each {// TODO: convert date format
+                                    out+="\n   ${strPad(it[0],9)}§f : ${date("m/d H:i:s",it[1])}"
+                                }
+                            }
+                            out += "\n§c> remove§f"
+                            if(teamEvent.remove){
+                                def removeData=(Map)teamEvent.remove
+                                removeData.keySet()
+                                        .sort()
+                                        .stream()
+                                        .map{[it,removeData[it]]}
+                                        .each {// TODO: convert date format
+                                    out+="\n   ${strPad(it[0],9)}§f : ${date("m/d H:i:s",it[1])}"
+                                }
+                            }
+                            break
+                        // reset game count
+                        case "count-reset":
+                        case "cr":
+                        case "ct":
+                            if(!s.op){
+                                s.sendMessage(this.lang.translateString("command.notPermission"))
+                                return true
+                            }
+                            this.team.battleCountReset()
+                            Command.broadcastCommandMessage(s,this.lang.translateString("command.t.gameCountReset"))
+                            return true
+                        // check game count
+                        case "count-check":
+                        case "c":
+                        case "count":
+                        case "cv":
+                            if(!s.op){
+                                s.sendMessage(this.lang.translateString("command.notPermission"))
+                                return true
+                            }
+                            out=this.lang.translateString("command.gameCountList")
+                            ((Map)this.team.teamBattleTime).forEach{teamNum,count->
+                                out+="\n${strPad(this.team.getTeamName(teamNum))}§f : $count"
+                            }
+                            break
+                        default:
+                            return false
                     }
                 }
+                break
+            // trasnfers players into another server
+            // TODO: Do we REALLY need it?
+            case 'tpalls':
+                def sno
+                if(a.size()>0&&!a[0].empty){
+                    sno=a[0]
+                }else{
+                    sno=1
+                }
+                def serverName=this.s.getServerName(sno)
+                if(serverName){
+                    Command.broadcastCommandMessage(s,this.lang.translateString("command.t.tpalls.sender",serverName))
+                    server.onlinePlayers.each {
+                        this.s.gotoPlay(player,sno)
+                    }
+                }else{
+                    out=this.lang.translateString("command.tpalls.serverNotFound")
+                }
+                break
+            // Main.php:1805 I'm at about 25%!
         }
         return true
     }
