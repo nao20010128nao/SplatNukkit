@@ -4,10 +4,14 @@ import cn.nukkit.Player
 import cn.nukkit.Server
 import cn.nukkit.command.Command
 import cn.nukkit.command.CommandSender
+import cn.nukkit.entity.Entity
 import cn.nukkit.lang.BaseLang
 import cn.nukkit.plugin.Plugin
 import cn.nukkit.plugin.PluginBase
+import cn.nukkit.potion.Effect
 import cn.nukkit.scheduler.Task
+
+import java.util.stream.Collectors
 
 import static java.lang.Math.*
 import static SplatoonMCPE.PhpUtils.*
@@ -728,7 +732,199 @@ class Main extends PluginBase {
                     out=this.lang.translateString("command.tpalls.serverNotFound")
                 }
                 break
-            // Main.php:1805 I'm at about 25%!
+            // Controls random messages
+            case 'random':
+                if(a.size()>0){
+                    switch(a[0]){
+                        case 'start':
+                            if(Tips){
+                                out=this.lang.translateString("command.random.error.alreadyStart")
+                            }else{
+                                Tips=true
+                                Task.Tips=server.scheduler.scheduleRepeatingTask(new RandomTask(this), 20*75)
+                                Command.broadcastCommandMessage(s,this.lang.translateString("command.random.start"))
+                                return true
+                            }
+                            break
+                        case 'stop':
+                            if(!Tips){
+                                out=this.lang.translateString("command.random.error.alreadyStop")
+                            }else{
+                                Tips=false
+                                def task=Task.Tips.taskId
+                                server.scheduler.cancelTask(task)
+                                Command.broadcastCommandMessage(s,this.lang.translateString("command.random.stop"))
+                                return true
+                            }
+                            break
+                        default:
+                            def num=Integer.valueOf(a[0])
+                            if(num<=(this.randomChat.size()-1)){
+                                out='GO'
+                                randomBroad(num)
+                                return true
+                            }else{
+                                out=this.lang.translateString("command.random.messageNotFound")
+                            }
+                    }
+                }else{
+                    randomBroad()
+                }
+                break
+            // Private chat for operators
+            case 'oc':
+                if(a.size()==0)return false
+                def message="[${(s instanceof Player)?s.displayName:s.name} -> OP] ${a.join(' ')}"
+                server.logger.info(message)
+                server.onlinePlayers.values().stream().filter{it.op}*.sendMessage(message)
+                break
+            // delete entities
+            case 'del':
+                Command.broadcastCommandMessage(s,this.lang.translateString("command.del.start"))
+                def count=0
+                def level=server.defaultLevel
+                ((List<Entity>)level.entities.toList().stream().filter{!(it instanceof Player)}.collect(Collectors.toList())).with{
+                    it*.close()
+                    count=size()
+                }
+                Command.broadcastCommandMessage(s,this.lang.translateString("command.del.end",count))
+                break
+            // game start
+            case 'gready':
+                if(game==1){
+                    gamestop=false
+                    if(TimeTable()){
+                        Command.broadcastCommandMessage(s,this.lang.translateString("command.gready.success"))
+                    }else{
+                        out=this.lang.translateString("command.gready.error")
+                    }
+                }else{
+                    out=this.lang.translateString("command.gready.error")
+                }
+                break
+            // force stop the game
+            case 'gstop':
+                if(gamestop){
+                    // resume game
+                    Command.broadcastCommandMessage(s,this.lang.translateString("command.gready.success"))
+                    gamestop=false
+                    if(Task.game.size()>=3){
+                        Task.game.stream().map{it.taskId}.each{server.scheduler.cancelTask(it)}
+                    }
+                    if(game==10){
+                        this.team.battleTeamMember.forEach{team,members->
+                            members.forEach{member,number->
+                                def player=server.getPlayer("$member")
+                                if(player instanceof Player & player.hasEffect(Effect.BLINDNESS)){
+                                    player.removeEffect(Effect.BLINDNESS)
+                                }
+                            }
+                        }
+                        def time=(int)((count_time-System.currentTimeMillis()+60)*20)
+                        view.forEach{name,value->
+                            def player=server.getPlayer("$name")
+                            if(player instanceof Player){
+                                player.removeEffect(Effect.JUMP)
+                                player.removeEffect(Effect.FATIGUE)
+                                // give effects again
+                                player.addEffect(Effect.getEffect(Effect.JUMP).setDuration(time).setAmplifier(130).setVisible(false))
+                                player.addEffect(Effect.getEffect(Effect.FATIGUE).setDuration(time).setAmplifier(5).setVisible(false))
+                            }
+                        }
+                        startGame()
+                    }else{
+                        TimeTable()
+                    }
+                }else{
+                    // stop game
+                    Command.broadcastCommandMessage(s,this.lang.translateString("command.gstop.success"))
+                    gamestop=true
+                    if(game==10){
+                        stopGame()
+                        view.forEach{name,value->
+                            def player=server.getPlayer("$name")
+                            if(player instanceof Player){
+                                Effect.getEffect(Effect.JUMP).setDuration(6000*20).setAmplifier(130).setVisible(false).add(player,true)
+                                Effect.getEffect(Effect.FATIGUE).setDuration(6000*20).setAmplifier(5).setVisible(false).add(player,true)
+                            }
+                        }
+                        this.team.battleTeamMember.forEach{team,members->
+                            members.forEach{member,number->
+                                def player=server.getPlayer("$member")
+                                if(player instanceof Player){
+                                    player.addEffect(Effect.getEffect(Effect.BLINDNESS).setDuration(6000*20).setAmplifier(0).setVisible(false))
+                                }
+                            }
+                        }
+                    }
+                }
+                break
+            // force stop the game
+            case 'gend':
+                def msg=this.lang.translateString("command.gend.success")
+                server.onlinePlayers.values().each {player->
+                    def userx=player.name
+                    def pt=(this.team.getBattleTeamOf(userx))?1000:15000
+                    def playerData=Account.instance.getData(userx)
+                    playerData.grantPoint(pt)
+                    player.sendMessage("§3ゲームが途中で終了したため§e${pt}pt§3差し上げます")
+                }
+                if(game>=10){
+                    if(gamestop){
+                        out=this.lang.translateString("command.gend.error")
+                    }else{
+                        Command.broadcastCommandMessage(s,msg)
+                        server.broadcastMessage("§3≫ $msg")
+                        if(game==10){
+                            unfinished=true
+                            Task.game.end=server.scheduler.scheduleRepeatingTask(new GameEnd(this), 1)
+                        }
+                    }
+                }else{
+                    Command.broadcastCommandMessage(s,msg)
+                    server.broadcastMessage("§3≫ $msg")
+                    GameEnd()
+                }
+                break
+            case 'gskip':
+                if(!gamestop&TimeTable()){
+                    Command.broadcastCommandMessage(s,this.lang.translateString("command.gskip.success"))
+                    return true
+                }else{
+                    out=this.lang.translateString("command.gskip.error")
+                }
+                break
+            // teleport everyone into respawn
+            case 'tprall':
+                server.onlinePlayers.values().each {tpr(it)}
+                Command.broadcastCommandMessage(s,this.lang.translateString("commnad.tprall.success"))
+                return true
+            // force teleport to respawn
+            // no params -> teleport yourself
+            // 1 param -> teleport [the first param]
+            case 'tpr':
+                if(a.size()==1){
+                    // teleporting others requires operator permission
+                    if(s.op){
+                        def player=server.getPlayer(a[0])
+                        if(player){
+                            tpr(player)
+                            Command.broadcastCommandMessage(s,this.lang.translateString("command.tpr.success.admin",player.displayName))
+                        }else{
+                            out=this.lang.translateString("command.playerNotFound")
+                        }
+                    }else{
+                        out=this.lang.translateString("command.notPermission")
+                    }
+                }else{
+                    if(s instanceof Player){
+                        out=this.lang.translateString("tpr.${tpr(s)?'respawn':'gameStartPoint'}")
+                    }else{
+                        return false
+                    }
+                }
+                break
+            // Main.php:2011
         }
         return true
     }
